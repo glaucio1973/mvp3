@@ -19,7 +19,8 @@ export default function Header({ title, onMobileMenuOpen }: HeaderProps) {
         </Button>
         {/* Mobile: show logo next to title */}
         <img
-          src="/bdn-logo.svg"
+          src="/bdn-logo.png"
+          onError={(e) => { (e.target as HTMLImageElement).src = '/bdn-logo.svg'; }}
           alt=""
           className="lg:hidden w-6 h-6 opacity-80"
           style={{ filter: 'none' }}
@@ -30,7 +31,12 @@ export default function Header({ title, onMobileMenuOpen }: HeaderProps) {
       <div className="flex items-center gap-1">
         {/* Desktop subtle logo in header */}
         <span className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground/60 mr-2">
-          <img src="/bdn-logo.svg" alt="" className="w-5 h-5 opacity-50" />
+          <img
+            src="/bdn-logo.png"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/bdn-logo.svg'; }}
+            alt=""
+            className="w-5 h-5 opacity-50"
+          />
           Bola de Neve
         </span>
         <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl">

@@ -90,11 +90,14 @@ export const createSale = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getSales = async (req: Request, res: Response) => {
+export const getSales = async (req: AuthRequest, res: Response) => {
   try {
     const { startDate, endDate, paymentMethod, status, page = '1', limit = '20' } = req.query;
 
     const where: any = {};
+    if (req.userRole === 'OPERATOR') {
+      where.operatorId = req.userId;
+    }
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate as string);

@@ -47,7 +47,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       )}>
         <div className="flex-shrink-0">
           <img
-            src="/bdn-logo.svg"
+            src="/bdn-logo.png"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/bdn-logo.svg'; }}
             alt="Bola de Neve"
             className={cn('transition-all', collapsed ? 'w-8 h-8' : 'w-10 h-10')}
             style={{ filter: 'brightness(0) invert(1)' }}

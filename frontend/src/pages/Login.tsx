@@ -51,7 +51,12 @@ export default function Login() {
           style={{ background: 'linear-gradient(to bottom, rgba(27,47,110,0.75) 0%, rgba(27,47,110,0.55) 50%, rgba(27,47,110,0.88) 100%)' }} />
 
         <div className="relative z-10 flex flex-col items-center text-center px-12">
-          <img src="/bdn-logo.svg" alt="Bola de Neve Church" className="w-60 mb-10 drop-shadow-2xl" />
+          <img
+            src="/bdn-logo.png"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/bdn-logo.svg'; }}
+            alt="Bola de Neve Church"
+            className="w-60 mb-10 drop-shadow-2xl"
+          />
           <h1 className="text-white text-3xl font-bold leading-snug mb-3">
             Cantina Bola de Neve
           </h1>
@@ -78,7 +83,12 @@ export default function Login() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex flex-col items-center mb-8">
-            <img src="/bdn-logo.svg" alt="Bola de Neve Church" className="w-32 mb-4 drop-shadow-md" />
+            <img
+              src="/bdn-logo.png"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/bdn-logo.svg'; }}
+              alt="Bola de Neve Church"
+              className="w-32 mb-4 drop-shadow-md"
+            />
             <h1 className="text-[#1B2F6E] font-bold text-lg text-center">Cantina Bola de Neve</h1>
             <p className="text-gray-500 text-xs mt-1 text-center">Sistema de gestão da cantina</p>
           </div>

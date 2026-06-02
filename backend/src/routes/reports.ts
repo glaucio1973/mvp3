@@ -5,6 +5,8 @@ import {
   getStockReport,
   getCashReport,
   getWeeklyReport,
+  getAbcReport,
+  getCashDailyReport,
 } from '../controllers/reportController';
 import { authenticate } from '../middleware/auth';
 import { adminOnly } from '../middleware/adminOnly';
@@ -18,5 +20,7 @@ router.get('/sales', adminOnly, getSalesReport);
 router.get('/stock', adminOnly, getStockReport);
 router.get('/cash', adminOnly, getCashReport);
 router.get('/weekly', getWeeklyReport);
+router.get('/abc', adminOnly, getAbcReport);
+router.get('/cash-daily', adminOnly, getCashDailyReport);
 
 export default router;

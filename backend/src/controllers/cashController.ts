@@ -126,10 +126,13 @@ export const closeCashRegister = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getCurrentCashRegister = async (_req: Request, res: Response) => {
+export const getCurrentCashRegister = async (req: AuthRequest, res: Response) => {
   try {
+    const isOperator = req.userRole === 'OPERATOR';
+    const where: any = { status: 'OPEN' };
+    if (isOperator) where.operatorId = req.userId;
     const cashRegister = await prisma.cashRegister.findFirst({
-      where: { status: 'OPEN' },
+      where,
       include: {
         operator: { select: { name: true, email: true } },
         sales: {
