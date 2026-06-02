@@ -115,6 +115,10 @@ export interface CartItem {
 }
 
 export interface DashboardData {
+  period: { start: string; end: string; label: string };
+  periodSales: { total: number; count: number };
+  byOperator: Array<{ name: string; total: number; count: number }>;
+  byPayment: Record<string, number>;
   todaySales: { total: number; count: number };
   monthSales: { total: number; count: number };
   totalProducts: number;

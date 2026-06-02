@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -12,6 +12,8 @@ import {
   Banknote,
   Smartphone,
   Clock,
+  Calendar,
+  Users,
 } from 'lucide-react';
 import api from '../utils/api';
 import { DashboardData } from '../types';
@@ -19,7 +21,10 @@ import { formatCurrency, formatDate, paymentMethodLabel } from '../utils/format'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { Skeleton } from '../components/ui/skeleton';
+
+type Period = 'today' | '7d' | '15d' | '30d' | 'custom';
 
 function StatsCard({
   title,
@@ -53,11 +58,29 @@ function StatsCard({
 }
 
 export default function Dashboard() {
+  const [period, setPeriod] = useState<Period>('today');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const queryParams: Record<string, string> = { period };
+  if (period === 'custom') {
+    if (customStart) queryParams.startDate = customStart;
+    if (customEnd) queryParams.endDate = customEnd;
+  }
+
   const { data, isLoading } = useQuery<DashboardData>({
-    queryKey: ['dashboard'],
-    queryFn: () => api.get('/reports/dashboard').then((r) => r.data),
+    queryKey: ['dashboard', period, customStart, customEnd],
+    queryFn: () => api.get('/reports/dashboard', { params: queryParams }).then((r) => r.data),
     refetchInterval: 30000,
   });
+
+  const periodButtons: { label: string; value: Period }[] = [
+    { label: 'Hoje', value: 'today' },
+    { label: '7 dias', value: '7d' },
+    { label: '15 dias', value: '15d' },
+    { label: '30 dias', value: '30d' },
+    { label: 'Período', value: 'custom' },
+  ];
 
   if (isLoading) {
     return (
@@ -82,10 +105,62 @@ export default function Dashboard() {
     PIX: Smartphone,
   };
 
+  const periodLabel: Record<Period, string> = {
+    today: 'Hoje',
+    '7d': 'Últimos 7 dias',
+    '15d': 'Últimos 15 dias',
+    '30d': 'Últimos 30 dias',
+    custom: 'Período personalizado',
+  };
+
   return (
     <div className="space-y-6">
+      {/* Period selector */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            {periodButtons.map((btn) => (
+              <Button
+                key={btn.value}
+                variant={period === btn.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod(btn.value)}
+                className="rounded-lg"
+              >
+                {btn.label}
+              </Button>
+            ))}
+            {period === 'custom' && (
+              <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                <Input
+                  type="date"
+                  value={customStart}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                  className="w-36 h-8 text-sm"
+                />
+                <span className="text-muted-foreground text-sm">até</span>
+                <Input
+                  type="date"
+                  value={customEnd}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                  className="w-36 h-8 text-sm"
+                />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title={`Vendas — ${periodLabel[period]}`}
+          value={formatCurrency(data?.periodSales?.total || 0)}
+          subtitle={`${data?.periodSales?.count || 0} transações`}
+          icon={TrendingUp}
+          color="bg-indigo-500"
+        />
         <StatsCard
           title="Vendas Hoje"
           value={formatCurrency(data?.todaySales.total || 0)}
@@ -97,15 +172,8 @@ export default function Dashboard() {
           title="Vendas do Mês"
           value={formatCurrency(data?.monthSales.total || 0)}
           subtitle={`${data?.monthSales.count || 0} transações`}
-          icon={TrendingUp}
+          icon={ShoppingCart}
           color="bg-green-500"
-        />
-        <StatsCard
-          title="Produtos Ativos"
-          value={String(data?.totalProducts || 0)}
-          subtitle="no catálogo"
-          icon={Package}
-          color="bg-purple-500"
         />
         <StatsCard
           title="Estoque Baixo"
@@ -135,6 +203,71 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Operator + Payment breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* By Operator */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="w-4 h-4 text-indigo-500" />
+              Vendas por Operador — {periodLabel[period]}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data?.byOperator && data.byOperator.length > 0 ? (
+              <div className="space-y-3">
+                {data.byOperator.map((op, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">{op.name}</p>
+                      <p className="text-xs text-muted-foreground">{op.count} {op.count === 1 ? 'venda' : 'vendas'}</p>
+                    </div>
+                    <p className="font-bold text-green-600">{formatCurrency(op.total)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground text-sm py-6">Sem vendas no período</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* By Payment Method */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-blue-500" />
+              Por Forma de Pagamento — {periodLabel[period]}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                <Banknote className="w-6 h-6 text-green-600 mb-2" />
+                <p className="text-xs text-muted-foreground font-medium">Dinheiro</p>
+                <p className="text-base font-bold text-green-700 dark:text-green-300 mt-1">
+                  {formatCurrency(data?.byPayment?.CASH || 0)}
+                </p>
+              </div>
+              <div className="flex flex-col items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                <CreditCard className="w-6 h-6 text-blue-600 mb-2" />
+                <p className="text-xs text-muted-foreground font-medium">Cartão</p>
+                <p className="text-base font-bold text-blue-700 dark:text-blue-300 mt-1">
+                  {formatCurrency(data?.byPayment?.CARD || 0)}
+                </p>
+              </div>
+              <div className="flex flex-col items-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+                <Smartphone className="w-6 h-6 text-yellow-600 mb-2" />
+                <p className="text-xs text-muted-foreground font-medium">Pix</p>
+                <p className="text-base font-bold text-yellow-700 dark:text-yellow-300 mt-1">
+                  {formatCurrency(data?.byPayment?.PIX || 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Low Stock Alert */}
@@ -209,7 +342,7 @@ export default function Dashboard() {
                 );
               })
             ) : (
-              <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda hoje</p>
+              <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda recente</p>
             )}
           </CardContent>
         </Card>

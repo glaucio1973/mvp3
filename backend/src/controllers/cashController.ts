@@ -170,13 +170,16 @@ export const getCurrentCashRegister = async (req: AuthRequest, res: Response) =>
   }
 };
 
-export const getCashHistory = async (req: Request, res: Response) => {
+export const getCashHistory = async (req: AuthRequest, res: Response) => {
   try {
     const { page = '1', limit = '10' } = req.query;
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const isOperator = req.userRole === 'OPERATOR';
+    const historyWhere = isOperator ? { operatorId: req.userId! } : {};
 
     const [registers, total] = await Promise.all([
       prisma.cashRegister.findMany({
+        where: historyWhere,
         include: {
           operator: { select: { name: true } },
           _count: { select: { sales: true, movements: true } },
@@ -185,7 +188,7 @@ export const getCashHistory = async (req: Request, res: Response) => {
         skip,
         take: parseInt(limit as string),
       }),
-      prisma.cashRegister.count(),
+      prisma.cashRegister.count({ where: historyWhere }),
     ]);
 
     return res.json({ registers, total });

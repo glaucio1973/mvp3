@@ -11,12 +11,11 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from 'recharts';
 import { format, subDays, startOfMonth } from 'date-fns';
 import api from '../utils/api';
 import { SalesReport } from '../types';
-import { formatCurrency, formatDateShort } from '../utils/format';
+import { formatCurrency, formatDateShort, formatDate } from '../utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -50,6 +49,18 @@ export default function Reports() {
   const { data: stockReport } = useQuery({
     queryKey: ['stock-report'],
     queryFn: () => api.get('/reports/stock').then((r) => r.data),
+  });
+
+  const { data: abcReport } = useQuery({
+    queryKey: ['abc-report', startDate, endDate],
+    queryFn: () =>
+      api.get('/reports/abc', { params: { startDate, endDate } }).then((r) => r.data),
+  });
+
+  const { data: cashDailyReport } = useQuery({
+    queryKey: ['cash-daily-report', startDate, endDate],
+    queryFn: () =>
+      api.get('/reports/cash-daily', { params: { startDate, endDate } }).then((r) => r.data),
   });
 
   const paymentData = report?.byPayment
@@ -125,6 +136,8 @@ export default function Reports() {
             <TabsTrigger value="operators">Operadores</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="stock">Estoque</TabsTrigger>
+            <TabsTrigger value="abc">Curva ABC</TabsTrigger>
+            <TabsTrigger value="cash-daily">Caixas/Dia</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales" className="space-y-6">
@@ -366,6 +379,159 @@ export default function Reports() {
                   </Card>
                 )}
               </div>
+            )}
+          </TabsContent>
+
+          {/* ABC Curve Tab */}
+          <TabsContent value="abc" className="space-y-4">
+            {/* Summary cards */}
+            <div className="grid grid-cols-3 gap-4">
+              {abcReport?.summary && (['A', 'B', 'C'] as const).map(cls => {
+                const colorMap: Record<string, string> = {
+                  A: 'bg-green-100 text-green-700',
+                  B: 'bg-blue-100 text-blue-700',
+                  C: 'bg-orange-100 text-orange-700',
+                };
+                const data = abcReport.summary[cls];
+                return (
+                  <Card key={cls}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${colorMap[cls]}`}>
+                          Classe {cls}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold">{data.count} produtos</p>
+                      <p className="text-sm text-green-600 font-medium">{formatCurrency(data.revenue)}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Products table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Produtos por Curva ABC</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-x-auto">
+                {abcReport?.items && abcReport.items.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-3 text-muted-foreground">#</th>
+                        <th className="text-left p-3 text-muted-foreground">Produto</th>
+                        <th className="text-left p-3 text-muted-foreground">Classe</th>
+                        <th className="text-right p-3 text-muted-foreground">Receita</th>
+                        <th className="text-right p-3 text-muted-foreground">%</th>
+                        <th className="text-right p-3 text-muted-foreground">Qtd</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {abcReport.items.map((item: any, i: number) => (
+                        <tr key={item.productId} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="p-3 text-muted-foreground">{i + 1}</td>
+                          <td className="p-3">
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">{item.category}</p>
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                              item.class === 'A' ? 'bg-green-100 text-green-700' :
+                              item.class === 'B' ? 'bg-blue-100 text-blue-700' :
+                              'bg-orange-100 text-orange-700'
+                            }`}>{item.class}</span>
+                          </td>
+                          <td className="p-3 text-right font-medium">{formatCurrency(item.revenue)}</td>
+                          <td className="p-3 text-right text-muted-foreground">{item.revenuePct.toFixed(1)}%</td>
+                          <td className="p-3 text-right text-muted-foreground">{item.quantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Sem dados no período</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Cash Daily Tab */}
+          <TabsContent value="cash-daily" className="space-y-4">
+            {cashDailyReport?.registers && cashDailyReport.registers.length > 0 ? (
+              cashDailyReport.registers.map((reg: any) => (
+                <Card key={reg.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">
+                        {formatDate(reg.openedAt)}
+                        {reg.closedAt && <span className="text-muted-foreground font-normal text-sm ml-2">— fechado {formatDate(reg.closedAt)}</span>}
+                      </CardTitle>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        reg.status === 'OPEN'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {reg.status === 'OPEN' ? 'Aberto' : 'Fechado'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Operador: {reg.operator?.name || '—'}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Totals row */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Total de Vendas</p>
+                        <p className="font-bold text-green-600">{formatCurrency(reg.salesTotal)}</p>
+                      </div>
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Dinheiro</p>
+                        <p className="font-bold text-green-700 dark:text-green-300">{formatCurrency(reg.byPayment?.CASH || 0)}</p>
+                      </div>
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Cartão</p>
+                        <p className="font-bold text-blue-700 dark:text-blue-300">{formatCurrency(reg.byPayment?.CARD || 0)}</p>
+                      </div>
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Pix</p>
+                        <p className="font-bold text-yellow-700 dark:text-yellow-300">{formatCurrency(reg.byPayment?.PIX || 0)}</p>
+                      </div>
+                    </div>
+
+                    {/* By operator */}
+                    {reg.byOperator && reg.byOperator.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">Por operador</p>
+                        <div className="space-y-2">
+                          {reg.byOperator.map((op: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between text-sm">
+                              <span className="text-foreground">{op.name}</span>
+                              <span className="font-medium text-green-600">{formatCurrency(op.total)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Difference if closed */}
+                    {reg.status === 'CLOSED' && reg.difference !== null && reg.difference !== undefined && (
+                      <div className={`text-sm p-2 rounded-lg ${
+                        reg.difference === 0 ? 'bg-green-50 text-green-700' :
+                        reg.difference > 0 ? 'bg-blue-50 text-blue-700' :
+                        'bg-red-50 text-red-700'
+                      }`}>
+                        Diferença de fechamento: {reg.difference >= 0 ? '+' : ''}{formatCurrency(reg.difference)}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Nenhum caixa encontrado no período
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
