@@ -96,16 +96,16 @@ export const getSalesReport = async (req: Request, res: Response) => {
       where: { createdAt: { gte: start, lte: end }, status: 'COMPLETED' },
       include: {
         items: { include: { product: { select: { name: true, category: true } } } },
-        operator: { select: { name: true } },
+        operator: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Group by day
     const byDay: Record<string, { date: string; total: number; count: number }> = {};
     const byPayment: Record<string, number> = { CASH: 0, CARD: 0, PIX: 0 };
     const byCategory: Record<string, number> = {};
     const byProduct: Record<string, { name: string; quantity: number; total: number }> = {};
+    const byOperator: Record<string, { name: string; total: number; count: number; byPayment: Record<string, number> }> = {};
 
     for (const sale of sales) {
       const dateKey = sale.createdAt.toISOString().split('T')[0];
@@ -115,6 +115,13 @@ export const getSalesReport = async (req: Request, res: Response) => {
       byDay[dateKey].count += 1;
 
       byPayment[sale.paymentMethod] = (byPayment[sale.paymentMethod] || 0) + sale.total;
+
+      const opId = sale.operatorId;
+      const opName = sale.operator?.name || 'Desconhecido';
+      if (!byOperator[opId]) byOperator[opId] = { name: opName, total: 0, count: 0, byPayment: { CASH: 0, CARD: 0, PIX: 0 } };
+      byOperator[opId].total += sale.total;
+      byOperator[opId].count += 1;
+      byOperator[opId].byPayment[sale.paymentMethod] = (byOperator[opId].byPayment[sale.paymentMethod] || 0) + sale.total;
 
       for (const item of sale.items) {
         const cat = item.product.category;
@@ -145,6 +152,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
       byDay: Object.values(byDay),
       byPayment,
       byCategory,
+      byOperator: Object.values(byOperator),
       topProducts,
     });
   } catch (error) {

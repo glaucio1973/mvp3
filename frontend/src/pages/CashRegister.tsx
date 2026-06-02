@@ -68,13 +68,75 @@ function OpenCashModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
 function CloseCashModal({ cash, onClose, onSuccess }: { cash: CashRegisterType; onClose: () => void; onSuccess: () => void }) {
   const [finalValue, setFinalValue] = useState('');
+  const [closedData, setClosedData] = useState<any>(null);
+
   const mutation = useMutation({
     mutationFn: () => api.put(`/cash/${cash.id}/close`, { finalValue: parseFloat(finalValue) }),
-    onSuccess: () => { toast.success('Caixa fechado com sucesso!'); onSuccess(); },
+    onSuccess: (res) => {
+      setClosedData(res.data);
+      toast.success('Caixa fechado com sucesso!');
+    },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Erro ao fechar caixa'),
   });
 
   const diff = finalValue ? parseFloat(finalValue) - (cash.currentTotal || 0) : null;
+
+  const totalByPayment = (pm: string) =>
+    cash.sales?.filter(s => s.paymentMethod === pm && s.status !== 'CANCELLED').reduce((sum, s) => sum + s.total, 0) || 0;
+
+  if (closedData) {
+    return (
+      <Dialog open onOpenChange={() => { onSuccess(); }}>
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Resumo do Fechamento</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Fundo inicial:</span><span>{formatCurrency(closedData.initialValue)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Esperado:</span><span>{formatCurrency(closedData.expectedValue || 0)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Informado:</span><span>{formatCurrency(closedData.finalValue || 0)}</span></div>
+              <div className={`flex justify-between font-bold border-t border-border pt-2 ${(closedData.difference || 0) < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                <span>Diferença:</span>
+                <span>{(closedData.difference || 0) >= 0 ? '+' : ''}{formatCurrency(closedData.difference || 0)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Vendas por pagamento</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[{ key: 'CASH', label: 'Dinheiro', color: 'green' }, { key: 'CARD', label: 'Cartão', color: 'blue' }, { key: 'PIX', label: 'Pix', color: 'yellow' }].map(({ key, label, color }) => (
+                  <div key={key} className={`text-center p-2 bg-${color}-50 dark:bg-${color}-900/20 rounded-lg`}>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className={`font-bold text-sm text-${color}-700 dark:text-${color}-300`}>{formatCurrency(closedData.byPayment?.[key] || 0)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {closedData.byOperator && closedData.byOperator.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold">Vendas por operador</p>
+                {closedData.byOperator.map((op: any, i: number) => (
+                  <div key={i} className="p-3 border border-border rounded-xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm">{op.name}</span>
+                      <span className="font-bold text-green-600">{formatCurrency(op.total)}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 text-xs text-center">
+                      <div className="bg-muted rounded p-1"><p className="text-muted-foreground">Dinheiro</p><p className="font-medium">{formatCurrency(op.byPayment?.CASH || 0)}</p></div>
+                      <div className="bg-muted rounded p-1"><p className="text-muted-foreground">Cartão</p><p className="font-medium">{formatCurrency(op.byPayment?.CARD || 0)}</p></div>
+                      <div className="bg-muted rounded p-1"><p className="text-muted-foreground">Pix</p><p className="font-medium">{formatCurrency(op.byPayment?.PIX || 0)}</p></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button className="w-full" onClick={onSuccess}>Concluir</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -82,18 +144,12 @@ function CloseCashModal({ cash, onClose, onSuccess }: { cash: CashRegisterType; 
         <DialogHeader><DialogTitle>Fechar Caixa</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Fundo inicial:</span>
-              <span>{formatCurrency(cash.initialValue)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Vendas (dinheiro):</span>
-              <span className="text-green-600">
-                {formatCurrency(cash.sales?.filter(s => s.paymentMethod === 'CASH').reduce((sum, s) => sum + s.total, 0) || 0)}
-              </span>
-            </div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Fundo inicial:</span><span>{formatCurrency(cash.initialValue)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Dinheiro (vendas):</span><span className="text-green-600">{formatCurrency(totalByPayment('CASH'))}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Cartão:</span><span className="text-blue-600">{formatCurrency(totalByPayment('CARD'))}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Pix:</span><span className="text-yellow-600">{formatCurrency(totalByPayment('PIX'))}</span></div>
             <div className="flex justify-between font-semibold border-t border-border pt-2">
-              <span>Esperado no caixa:</span>
+              <span>Esperado em caixa:</span>
               <span>{formatCurrency(cash.currentTotal || 0)}</span>
             </div>
           </div>
@@ -122,12 +178,7 @@ function CloseCashModal({ cash, onClose, onSuccess }: { cash: CashRegisterType; 
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1">Cancelar</Button>
-            <Button
-              variant="destructive"
-              onClick={() => mutation.mutate()}
-              className="flex-1"
-              disabled={mutation.isPending || !finalValue}
-            >
+            <Button variant="destructive" onClick={() => mutation.mutate()} className="flex-1" disabled={mutation.isPending || !finalValue}>
               {mutation.isPending ? 'Fechando...' : 'Fechar Caixa'}
             </Button>
           </div>

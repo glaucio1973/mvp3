@@ -53,11 +53,13 @@ export default function Reports() {
   });
 
   const paymentData = report?.byPayment
-    ? Object.entries(report.byPayment).map(([key, value]) => ({
-        name: paymentLabels[key] || key,
-        value,
-        color: paymentColors[key] || '#94A3B8',
-      }))
+    ? Object.entries(report.byPayment as Record<string, number>)
+        .filter(([, v]) => v > 0)
+        .map(([key, value]) => ({
+          name: paymentLabels[key] || key,
+          value,
+          color: paymentColors[key] || '#94A3B8',
+        }))
     : [];
 
   const categoryData = report?.byCategory
@@ -118,8 +120,9 @@ export default function Reports() {
         <div className="text-center py-12 text-muted-foreground">Carregando relatório...</div>
       ) : (
         <Tabs defaultValue="sales">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="sales">Vendas</TabsTrigger>
+            <TabsTrigger value="operators">Operadores</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="stock">Estoque</TabsTrigger>
           </TabsList>
@@ -218,6 +221,47 @@ export default function Reports() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="operators" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Vendas por Operador</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {report?.byOperator && (report.byOperator as any[]).length > 0 ? (
+                  <div className="space-y-4">
+                    {(report.byOperator as any[]).map((op: any, i: number) => (
+                      <div key={i} className="p-4 border border-border rounded-xl space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{op.name}</p>
+                            <p className="text-xs text-muted-foreground">{op.count} {op.count === 1 ? 'venda' : 'vendas'}</p>
+                          </div>
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(op.total)}</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Dinheiro</p>
+                            <p className="font-bold text-sm text-green-700 dark:text-green-300">{formatCurrency(op.byPayment?.CASH || 0)}</p>
+                          </div>
+                          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Cartão</p>
+                            <p className="font-bold text-sm text-blue-700 dark:text-blue-300">{formatCurrency(op.byPayment?.CARD || 0)}</p>
+                          </div>
+                          <div className="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Pix</p>
+                            <p className="font-bold text-sm text-yellow-700 dark:text-yellow-300">{formatCurrency(op.byPayment?.PIX || 0)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Sem dados no período</p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="products">

@@ -69,55 +69,7 @@ async function main() {
   }
 
   console.log(`${products.length} products created`);
-
-  // Create some sample sales for reports
-  const allProducts = await prisma.product.findMany();
-  const sampleDates = [
-    new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-    new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-    new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    new Date(),
-  ];
-
-  const paymentMethods: ('CASH' | 'CARD' | 'PIX')[] = ['CASH', 'CARD', 'PIX'];
-
-  for (const date of sampleDates) {
-    const numSales = Math.floor(Math.random() * 5) + 3;
-    for (let i = 0; i < numSales; i++) {
-      const numItems = Math.floor(Math.random() * 3) + 1;
-      const saleItems = [];
-      let total = 0;
-
-      for (let j = 0; j < numItems; j++) {
-        const product = allProducts[Math.floor(Math.random() * allProducts.length)];
-        const quantity = Math.floor(Math.random() * 3) + 1;
-        const subtotal = product.price * quantity;
-        total += subtotal;
-        saleItems.push({ productId: product.id, quantity, unitPrice: product.price, subtotal });
-      }
-
-      const paymentMethod = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
-
-      await prisma.sale.create({
-        data: {
-          operatorId: admin.id,
-          total,
-          paymentMethod,
-          status: 'COMPLETED',
-          createdAt: date,
-          items: {
-            create: saleItems,
-          },
-        },
-      });
-    }
-  }
-
-  console.log('Sample sales created');
-  console.log('Seed complete!');
+  console.log('Seed complete! Sistema iniciado sem vendas — caixa zerado.');
   console.log('');
   console.log('Admin credentials:');
   console.log('  Email: admin@cantina.com');

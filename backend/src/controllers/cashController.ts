@@ -55,7 +55,10 @@ export const closeCashRegister = async (req: AuthRequest, res: Response) => {
 
     const cashRegister = await prisma.cashRegister.findUnique({
       where: { id },
-      include: { sales: true, movements: true },
+      include: {
+        sales: { include: { operator: { select: { name: true } } } },
+        movements: true,
+      },
     });
 
     if (!cashRegister) return res.status(404).json({ error: 'Caixa não encontrado' });
@@ -74,6 +77,24 @@ export const closeCashRegister = async (req: AuthRequest, res: Response) => {
     const fv = parseFloat(finalValue);
     const difference = fv - expectedValue;
 
+    // Operator breakdown for the closing summary
+    const byOperator: Record<string, { name: string; total: number; count: number; byPayment: Record<string, number> }> = {};
+    for (const sale of cashRegister.sales.filter(s => s.status === 'COMPLETED')) {
+      const opId = sale.operatorId;
+      const opName = (sale as any).operator?.name || 'Desconhecido';
+      if (!byOperator[opId]) byOperator[opId] = { name: opName, total: 0, count: 0, byPayment: { CASH: 0, CARD: 0, PIX: 0 } };
+      byOperator[opId].total += sale.total;
+      byOperator[opId].count += 1;
+      byOperator[opId].byPayment[sale.paymentMethod] = (byOperator[opId].byPayment[sale.paymentMethod] || 0) + sale.total;
+    }
+
+    const byPayment = cashRegister.sales
+      .filter(s => s.status === 'COMPLETED')
+      .reduce((acc: Record<string, number>, s) => {
+        acc[s.paymentMethod] = (acc[s.paymentMethod] || 0) + s.total;
+        return acc;
+      }, { CASH: 0, CARD: 0, PIX: 0 });
+
     const updated = await prisma.cashRegister.update({
       where: { id },
       data: {
@@ -85,7 +106,7 @@ export const closeCashRegister = async (req: AuthRequest, res: Response) => {
       },
       include: {
         operator: { select: { name: true } },
-        sales: { include: { items: true } },
+        sales: { include: { items: true, operator: { select: { name: true } } } },
         movements: { include: { user: { select: { name: true } } } },
       },
     });
@@ -98,7 +119,7 @@ export const closeCashRegister = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    return res.json(updated);
+    return res.json({ ...updated, byOperator: Object.values(byOperator), byPayment });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Erro ao fechar caixa' });
