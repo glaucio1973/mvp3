@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -59,7 +59,7 @@ model StockMovement {
   product   Product  @relation(fields: [productId], references: [id])
   type      String
   quantity  Int
-  notes     String?
+  notes     String?  @db.Text
   createdBy String
   user      User     @relation(fields: [createdBy], references: [id])
   createdAt DateTime @default(now())
@@ -75,8 +75,8 @@ model Sale {
   total          Float
   paymentMethod  String
   status         String        @default("COMPLETED")
-  notes          String?
-  createdAt      DateTime      @default(now())
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
 }
 
 model SaleItem {
@@ -122,6 +122,6 @@ model ActivityLog {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   action    String
-  details   String?
+  details   String?  @db.Text
   createdAt DateTime @default(now())
 }
