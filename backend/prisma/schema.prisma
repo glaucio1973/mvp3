@@ -8,42 +8,37 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  password     String
-  role         Role     @default(OPERATOR)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  sales        Sale[]
-  cashRegisters CashRegister[]
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  password       String
+  role           String         @default("OPERATOR")
+  active         Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  sales          Sale[]
+  cashRegisters  CashRegister[]
   stockMovements StockMovement[]
-  priceChanges PriceHistory[]
-  cashMovements CashMovement[]
-  activityLogs ActivityLog[]
-}
-
-enum Role {
-  ADMIN
-  OPERATOR
+  priceChanges   PriceHistory[]
+  cashMovements  CashMovement[]
+  activityLogs   ActivityLog[]
 }
 
 model Product {
-  id           String   @id @default(cuid())
-  name         String
-  category     String
-  sku          String   @unique
-  description  String?
-  imageUrl     String?
-  price        Float
-  stock        Int      @default(0)
-  minStock     Int      @default(5)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  saleItems    SaleItem[]
-  priceHistory PriceHistory[]
+  id             String          @id @default(cuid())
+  name           String
+  category       String
+  sku            String          @unique
+  description    String?
+  imageUrl       String?
+  price          Float
+  stock          Int             @default(0)
+  minStock       Int             @default(5)
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  saleItems      SaleItem[]
+  priceHistory   PriceHistory[]
   stockMovements StockMovement[]
 }
 
@@ -59,21 +54,15 @@ model PriceHistory {
 }
 
 model StockMovement {
-  id        String        @id @default(cuid())
+  id        String   @id @default(cuid())
   productId String
-  product   Product       @relation(fields: [productId], references: [id])
-  type      MovementType
+  product   Product  @relation(fields: [productId], references: [id])
+  type      String
   quantity  Int
   notes     String?
   createdBy String
-  user      User          @relation(fields: [createdBy], references: [id])
-  createdAt DateTime      @default(now())
-}
-
-enum MovementType {
-  ENTRY
-  EXIT
-  ADJUSTMENT
+  user      User     @relation(fields: [createdBy], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model Sale {
@@ -84,8 +73,8 @@ model Sale {
   cashRegister   CashRegister? @relation(fields: [cashRegisterId], references: [id])
   items          SaleItem[]
   total          Float
-  paymentMethod  PaymentMethod
-  status         SaleStatus    @default(COMPLETED)
+  paymentMethod  String
+  status         String        @default("COMPLETED")
   notes          String?
   createdAt      DateTime      @default(now())
 }
@@ -101,22 +90,11 @@ model SaleItem {
   subtotal  Float
 }
 
-enum PaymentMethod {
-  CASH
-  CARD
-  PIX
-}
-
-enum SaleStatus {
-  COMPLETED
-  CANCELLED
-}
-
 model CashRegister {
   id            String         @id @default(cuid())
   operatorId    String
   operator      User           @relation(fields: [operatorId], references: [id])
-  status        CashStatus     @default(OPEN)
+  status        String         @default("OPEN")
   initialValue  Float
   finalValue    Float?
   expectedValue Float?
@@ -131,17 +109,12 @@ model CashMovement {
   id             String       @id @default(cuid())
   cashRegisterId String
   cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
-  type           MovementType
+  type           String
   amount         Float
   description    String
   createdBy      String
   user           User         @relation(fields: [createdBy], references: [id])
   createdAt      DateTime     @default(now())
-}
-
-enum CashStatus {
-  OPEN
-  CLOSED
 }
 
 model ActivityLog {
