@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  password     String
+  role         Role     @default(OPERATOR)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  sales        Sale[]
+  cashRegisters CashRegister[]
+  stockMovements StockMovement[]
+  priceChanges PriceHistory[]
+  cashMovements CashMovement[]
+  activityLogs ActivityLog[]
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  category     String
+  sku          String   @unique
+  description  String?
+  imageUrl     String?
+  price        Float
+  stock        Int      @default(0)
+  minStock     Int      @default(5)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  saleItems    SaleItem[]
+  priceHistory PriceHistory[]
+  stockMovements StockMovement[]
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  oldPrice  Float
+  newPrice  Float
+  changedBy String
+  user      User     @relation(fields: [changedBy], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model StockMovement {
+  id        String        @id @default(cuid())
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+  type      MovementType
+  quantity  Int
+  notes     String?
+  createdBy String
+  user      User          @relation(fields: [createdBy], references: [id])
+  createdAt DateTime      @default(now())
+}
+
+enum MovementType {
+  ENTRY
+  EXIT
+  ADJUSTMENT
+}
+
+model Sale {
+  id             String        @id @default(cuid())
+  operatorId     String
+  operator       User          @relation(fields: [operatorId], references: [id])
+  cashRegisterId String?
+  cashRegister   CashRegister? @relation(fields: [cashRegisterId], references: [id])
+  items          SaleItem[]
+  total          Float
+  paymentMethod  PaymentMethod
+  status         SaleStatus    @default(COMPLETED)
+  notes          String?
+  createdAt      DateTime      @default(now())
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Float
+  subtotal  Float
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  PIX
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+}
+
+model CashRegister {
+  id            String         @id @default(cuid())
+  operatorId    String
+  operator      User           @relation(fields: [operatorId], references: [id])
+  status        CashStatus     @default(OPEN)
+  initialValue  Float
+  finalValue    Float?
+  expectedValue Float?
+  difference    Float?
+  openedAt      DateTime       @default(now())
+  closedAt      DateTime?
+  sales         Sale[]
+  movements     CashMovement[]
+}
+
+model CashMovement {
+  id             String       @id @default(cuid())
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+  type           MovementType
+  amount         Float
+  description    String
+  createdBy      String
+  user           User         @relation(fields: [createdBy], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+enum CashStatus {
+  OPEN
+  CLOSED
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
