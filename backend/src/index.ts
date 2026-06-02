@@ -1,9 +1,9 @@
 import './setup'; // must be first — loads .env before any Prisma client is created
+import prisma from './lib/prisma'; // second — creates the shared PrismaClient with DATABASE_URL loaded
 
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 import authRoutes from './routes/auth';
@@ -34,7 +34,6 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/debug-login', async (_req, res) => {
-  const prisma = new PrismaClient();
   try {
     const count = await prisma.user.count();
     const user = await prisma.user.findUnique({ where: { email: 'cantina@cantina.com' } });
@@ -45,32 +44,25 @@ app.get('/api/debug-login', async (_req, res) => {
     return res.json({ dbUrl: process.env.DATABASE_URL, count, found: true, active: user.active, passwordValid: valid });
   } catch (e: any) {
     return res.json({ error: e.message });
-  } finally {
-    await prisma.$disconnect();
   }
 });
 
 async function ensureAdminExists() {
-  const prisma = new PrismaClient();
-  try {
-    const count = await prisma.user.count();
-    console.log(`[startup] DATABASE_URL: ${process.env.DATABASE_URL}`);
-    console.log(`[startup] Usuários no banco: ${count}`);
-    if (count === 0) {
-      const hash = await bcrypt.hash('cantina123', 10);
-      await prisma.user.create({
-        data: {
-          name: 'Cantina Admin',
-          email: 'cantina@cantina.com',
-          password: hash,
-          role: 'ADMIN',
-          active: true,
-        },
-      });
-      console.log('[startup] ✅ Admin criado automaticamente: cantina@cantina.com / cantina123');
-    }
-  } finally {
-    await prisma.$disconnect();
+  const count = await prisma.user.count();
+  console.log(`[startup] DATABASE_URL: ${process.env.DATABASE_URL}`);
+  console.log(`[startup] Usuários no banco: ${count}`);
+  if (count === 0) {
+    const hash = await bcrypt.hash('cantina123', 10);
+    await prisma.user.create({
+      data: {
+        name: 'Cantina Admin',
+        email: 'cantina@cantina.com',
+        password: hash,
+        role: 'ADMIN',
+        active: true,
+      },
+    });
+    console.log('[startup] ✅ Admin criado automaticamente: cantina@cantina.com / cantina123');
   }
 }
 

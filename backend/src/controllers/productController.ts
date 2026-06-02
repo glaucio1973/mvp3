@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-
-const prisma = new PrismaClient();
 
 // Multer config
 const storage = multer.diskStorage({
