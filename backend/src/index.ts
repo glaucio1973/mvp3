@@ -33,6 +33,23 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/debug-login', async (_req, res) => {
+  const prisma = new PrismaClient();
+  try {
+    const count = await prisma.user.count();
+    const user = await prisma.user.findUnique({ where: { email: 'cantina@cantina.com' } });
+    if (!user) {
+      return res.json({ dbUrl: process.env.DATABASE_URL, count, found: false });
+    }
+    const valid = await bcrypt.compare('cantina123', user.password);
+    return res.json({ dbUrl: process.env.DATABASE_URL, count, found: true, active: user.active, passwordValid: valid });
+  } catch (e: any) {
+    return res.json({ error: e.message });
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 async function ensureAdminExists() {
   const prisma = new PrismaClient();
   try {
