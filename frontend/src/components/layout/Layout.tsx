@@ -44,15 +44,18 @@ export default function Layout() {
         />
       </div>
 
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
+        {/* Pulpit watermark — behind all content */}
+        <div className="bdn-watermark" aria-hidden="true" />
+
         <Header title={title} onMobileMenuOpen={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-3 lg:p-6 pb-20 lg:pb-6">
+        <main className="relative z-10 flex-1 overflow-y-auto p-3 lg:p-6 pb-20 lg:pb-6">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-background border-t border-border safe-area-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
         <div className="flex">
           {mobileNav.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -61,13 +64,13 @@ export default function Layout() {
               className={({ isActive }) =>
                 cn(
                   'flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-[10px] font-medium transition-colors',
-                  isActive ? 'text-blue-600' : 'text-muted-foreground'
+                  isActive ? 'text-[#1B2F6E] dark:text-blue-400' : 'text-muted-foreground'
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <div className={cn('p-1.5 rounded-xl transition-colors', isActive && 'bg-blue-50 dark:bg-blue-900/30')}>
+                  <div className={cn('p-1.5 rounded-xl transition-colors', isActive && 'bg-[#1B2F6E]/10 dark:bg-blue-400/20')}>
                     <Icon className="w-5 h-5" />
                   </div>
                   {label}

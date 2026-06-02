@@ -146,7 +146,7 @@ function CloseCashModal({ cash, onClose, onSuccess }: { cash: CashRegisterType; 
           <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Fundo inicial:</span><span>{formatCurrency(cash.initialValue)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Dinheiro (vendas):</span><span className="text-green-600">{formatCurrency(totalByPayment('CASH'))}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Cartão:</span><span className="text-blue-600">{formatCurrency(totalByPayment('CARD'))}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Cartão:</span><span className="text-[#1B2F6E]">{formatCurrency(totalByPayment('CARD'))}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Pix:</span><span className="text-yellow-600">{formatCurrency(totalByPayment('PIX'))}</span></div>
             <div className="flex justify-between font-semibold border-t border-border pt-2">
               <span>Esperado em caixa:</span>
@@ -332,7 +332,7 @@ export default function CashRegister() {
             <Card>
               <CardContent className="p-6">
                 <p className="text-sm text-muted-foreground mb-1">Dinheiro em Caixa</p>
-                <p className="text-2xl font-bold text-blue-600">{formatCurrency(currentCash.currentTotal || 0)}</p>
+                <p className="text-2xl font-bold text-[#1B2F6E]">{formatCurrency(currentCash.currentTotal || 0)}</p>
                 <p className="text-xs text-muted-foreground mt-1">Fundo: {formatCurrency(currentCash.initialValue)}</p>
               </CardContent>
             </Card>

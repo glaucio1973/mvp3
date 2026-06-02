@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Snowflake, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuthStore } from '../store/authStore';
@@ -11,112 +9,150 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'Senha obrigatória'),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-
 export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { setAuth } = useAuthStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuthStore();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+  const mutation = useMutation({
+    mutationFn: (data: { email: string; password: string }) =>
+      api.post('/auth/login', data),
+    onSuccess: (res) => {
+      login(res.data.token, res.data.user);
+      toast.success(`Bem-vindo, ${res.data.user.name}!`);
+      navigate('/dashboard');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Email ou senha inválidos');
+    },
   });
 
-  const onSubmit = async (data: LoginForm) => {
-    setLoading(true);
-    try {
-      const response = await api.post('/auth/login', data);
-      setAuth(response.data.user, response.data.token);
-      toast.success(`Bem-vindo, ${response.data.user.name}!`);
-      navigate('/dashboard');
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Erro ao fazer login');
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) { toast.error('Preencha todos os campos'); return; }
+    mutation.mutate({ email, password });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-800">
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-200 dark:shadow-blue-900">
-              <Snowflake className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cantina</h1>
-            <p className="text-blue-600 dark:text-blue-400 font-medium">Bola de Neve</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sistema de Gestão</p>
+    <div className="min-h-screen flex flex-col lg:flex-row">
+
+      {/* === Left panel — brand hero (desktop only) === */}
+      <div className="relative hidden lg:flex lg:w-1/2 flex-col items-center justify-center overflow-hidden"
+        style={{ background: '#1B2F6E' }}>
+        {/* Pulpit background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/pulpito.jpg')", opacity: 0.22 }}
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, rgba(27,47,110,0.75) 0%, rgba(27,47,110,0.55) 50%, rgba(27,47,110,0.88) 100%)' }} />
+
+        <div className="relative z-10 flex flex-col items-center text-center px-12">
+          <img src="/bdn-logo.svg" alt="Bola de Neve Church" className="w-60 mb-10 drop-shadow-2xl" />
+          <h1 className="text-white text-3xl font-bold leading-snug mb-3">
+            Cantina Bola de Neve
+          </h1>
+          <p className="text-white/65 text-base leading-relaxed max-w-xs">
+            Sistema de gestão de estoque, vendas e caixa da cantina da igreja.
+          </p>
+          <div className="mt-10 text-white/40 text-sm italic">"In Jesus We Trust"</div>
+        </div>
+
+        {/* Bottom wave decoration */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 opacity-10"
+          style={{ background: 'radial-gradient(ellipse at center bottom, rgba(255,255,255,0.4) 0%, transparent 70%)' }} />
+      </div>
+
+      {/* === Right panel — login form === */}
+      <div className="flex-1 flex flex-col items-center justify-center min-h-screen lg:min-h-0 relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40">
+        {/* Mobile: subtle pulpit watermark */}
+        <div
+          className="lg:hidden absolute inset-0 bg-cover bg-top"
+          style={{ backgroundImage: "url('/pulpito.jpg')", opacity: 0.05 }}
+        />
+
+        <div className="relative z-10 w-full max-w-sm px-6 py-10">
+
+          {/* Mobile logo */}
+          <div className="lg:hidden flex flex-col items-center mb-8">
+            <img src="/bdn-logo.svg" alt="Bola de Neve Church" className="w-32 mb-4 drop-shadow-md" />
+            <h1 className="text-[#1B2F6E] font-bold text-lg text-center">Cantina Bola de Neve</h1>
+            <p className="text-gray-500 text-xs mt-1 text-center">Sistema de gestão da cantina</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@cantina.com"
-                {...register('email')}
-                className={errors.email ? 'border-red-500' : ''}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500">{errors.email.message}</p>
-              )}
-            </div>
+          {/* Desktop heading */}
+          <div className="hidden lg:block mb-8">
+            <h2 className="text-[#1B2F6E] text-2xl font-bold">Bem-vindo de volta!</h2>
+            <p className="text-gray-500 text-sm mt-1">Entre com suas credenciais para acessar</p>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
+          {/* Form card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100/80 p-7">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">E-mail</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  {...register('password')}
-                  className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 rounded-xl"
+                  autoComplete="email"
+                  autoFocus
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
               </div>
-              {errors.password && (
-                <p className="text-xs text-red-500">{errors.password.message}</p>
-              )}
-            </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                'Entrar'
-              )}
-            </Button>
-          </form>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 pr-10 rounded-xl"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
 
-          <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Demo:</strong> admin@cantina.com / admin123
-            </p>
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+                className="w-full h-11 rounded-xl text-base font-semibold gap-2 mt-1"
+                style={{ background: '#1B2F6E' }}
+              >
+                {mutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Entrando...
+                  </span>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4" />
+                    Entrar
+                  </>
+                )}
+              </Button>
+            </form>
           </div>
+
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Bola de Neve Church &nbsp;·&nbsp; Sistema de Cantina
+          </p>
         </div>
       </div>
     </div>

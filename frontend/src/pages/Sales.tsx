@@ -125,7 +125,7 @@ export default function Sales() {
                   <button
                     key={product.id}
                     onClick={() => { addItem(product); toast.success(`${product.name} adicionado`, { duration: 800 }); }}
-                    className="relative text-left bg-white dark:bg-gray-900 border border-border rounded-xl p-3 hover:border-blue-500 hover:shadow-md active:scale-95 transition-all"
+                    className="relative text-left bg-white dark:bg-gray-900 border border-border rounded-xl p-3 hover:border-[#1B2F6E]/70 hover:shadow-md active:scale-95 transition-all"
                   >
                     <div className="h-16 sm:h-20 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
                       {product.imageUrl ? (
@@ -135,14 +135,14 @@ export default function Sales() {
                       )}
                     </div>
                     {cartItem && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow">
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-[#1B2F6E] rounded-full flex items-center justify-center shadow">
                         <span className="text-white text-xs font-bold">{cartItem.quantity}</span>
                       </div>
                     )}
                     <p className="text-xs font-semibold text-foreground truncate leading-tight">{product.name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{product.category}</p>
                     <div className="flex items-center justify-between mt-1">
-                      <p className="text-sm font-bold text-blue-600">{formatCurrency(product.price)}</p>
+                      <p className="text-sm font-bold text-[#1B2F6E]">{formatCurrency(product.price)}</p>
                       <p className="text-[10px] text-muted-foreground">{product.stock}un</p>
                     </div>
                   </button>
@@ -158,7 +158,7 @@ export default function Sales() {
         <div className="lg:hidden fixed bottom-16 left-0 right-0 z-30 px-4 pb-2">
           <button
             onClick={() => setCartOpen(true)}
-            className="w-full flex items-center justify-between bg-blue-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl active:scale-95 transition-transform"
+            className="w-full flex items-center justify-between bg-[#1B2F6E] text-white rounded-2xl px-5 py-3.5 shadow-2xl active:scale-95 transition-transform"
           >
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
@@ -235,7 +235,7 @@ export default function Sales() {
                 <div className="px-5 pb-6 pt-3 border-t border-border space-y-3">
                   <div className="flex justify-between text-base font-bold">
                     <span>Total</span>
-                    <span className="text-blue-600 text-xl">{formatCurrency(total)}</span>
+                    <span className="text-[#1B2F6E] text-xl">{formatCurrency(total)}</span>
                   </div>
                   <Button className="w-full h-12 text-base gap-2 rounded-xl" onClick={() => setCheckoutStep(true)}>
                     <CreditCard className="w-5 h-5" /> Ir para Pagamento
@@ -255,7 +255,7 @@ export default function Sales() {
                       onClick={() => setPaymentMethod(value)}
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-sm font-medium transition-all ${
                         paymentMethod === value
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600'
+                          ? 'border-[#1B2F6E] bg-blue-50 dark:bg-blue-900/30 text-[#1B2F6E]'
                           : 'border-border hover:bg-muted'
                       }`}
                     >
@@ -356,7 +356,7 @@ export default function Sales() {
           <div className="p-4 border-t border-border space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">Total</span>
-              <span className="text-xl font-bold text-blue-600">{formatCurrency(total)}</span>
+              <span className="text-xl font-bold text-[#1B2F6E]">{formatCurrency(total)}</span>
             </div>
             <div className="grid grid-cols-3 gap-1">
               {paymentMethods.map(({ value, label, icon: Icon }) => (
@@ -365,7 +365,7 @@ export default function Sales() {
                   onClick={() => setPaymentMethod(value)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all ${
                     paymentMethod === value
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600'
+                      ? 'border-[#1B2F6E] bg-blue-50 dark:bg-blue-900/30 text-[#1B2F6E]'
                       : 'border-border hover:bg-muted'
                   }`}
                 >
@@ -398,7 +398,7 @@ export default function Sales() {
               <CheckCircle className="w-9 h-9 text-green-600" />
             </div>
             <h2 className="text-xl font-bold mb-1">Venda Realizada!</h2>
-            <p className="text-2xl font-bold text-blue-600 mb-4">{formatCurrency(successSale.total)}</p>
+            <p className="text-2xl font-bold text-[#1B2F6E] mb-4">{formatCurrency(successSale.total)}</p>
             <div className="text-left space-y-1 mb-6 text-sm">
               {successSale.items?.map((item: any) => (
                 <div key={item.id} className="flex justify-between text-muted-foreground">

@@ -175,7 +175,7 @@ export default function Products() {
                   </div>
 
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-lg font-bold text-blue-600">{formatCurrency(product.price)}</p>
+                    <p className="text-lg font-bold text-[#1B2F6E]">{formatCurrency(product.price)}</p>
                     <div className="text-right">
                       <p className={`text-sm font-medium ${isOut ? 'text-red-500' : isLow ? 'text-orange-500' : 'text-green-600'}`}>
                         {product.stock} un.
