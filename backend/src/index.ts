@@ -15,8 +15,27 @@ import reportRoutes from './routes/reports';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const IS_PROD = process.env.NODE_ENV === 'production';
 
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+  : [];
+
+app.use(
+  cors({
+    origin: IS_PROD
+      ? (origin, cb) => {
+          if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            cb(null, true);
+          } else {
+            cb(new Error(`Origin ${origin} not allowed`));
+          }
+        }
+      : true,
+    credentials: true,
+  })
+);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,6 +51,15 @@ app.use('/api/reports', reportRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve built frontend in production
+if (IS_PROD) {
+  const frontendDist = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDist));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 app.get('/api/debug-login', async (_req, res) => {
   try {
