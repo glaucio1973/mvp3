@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# Exceções: dist/ compilado é commitado para deploy sem build no servidor
+!backend/dist/
+!frontend/dist/
 .env
 *.db
 *.db-journal

@@ -1,0 +1,1 @@
+{"version":3,"file":"adminOnly.d.ts","sourceRoot":"","sources":["../../src/middleware/adminOnly.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,YAAY,EAAE,MAAM,SAAS,CAAC;AACjD,OAAO,EAAE,WAAW,EAAE,MAAM,QAAQ,CAAC;AAErC,eAAO,MAAM,SAAS,GAAI,KAAK,WAAW,EAAE,KAAK,QAAQ,EAAE,MAAM,YAAY,uCAK5E,CAAC"}
