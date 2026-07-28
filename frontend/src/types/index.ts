@@ -139,4 +139,10 @@ export interface SalesReport {
   byPayment: Record<PaymentMethod, number>;
   byCategory: Record<string, number>;
   topProducts: Array<{ id: string; name: string; quantity: number; total: number }>;
+  byOperator: Array<{
+    name: string;
+    count: number;
+    total: number;
+    byPayment: Record<string, number>;
+  }>;
 }
